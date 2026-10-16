@@ -1,0 +1,39 @@
+name: Auto Build
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths-ignore:
+      - '**.yml'
+      - '**.md'
+      - '.gitignore'
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Get working directory
+        id: wd
+        run: echo "::set-output name=dir::$(ls . -filter *.csproj -recurse).DirectoryName"
+      - name: Download Stripped Libs
+        uses: robinraju/release-downloader@v1.2
+        with:
+          repository: "Gorilla-Tag-Modding-Group/BeatStripper"
+          latest: true
+          fileName: "Stripped.zip"
+      - name: Download BepInEx
+        uses: robinraju/release-downloader@v1.2
+        with:
+          repository: "BepInEx/BepInEx"
+          latest: true
+          fileName: "*"
+      - name: Build project
+        env:
+          CI: TRUE
+        run: ${{ steps.wd.outputs.dir }}\MakeRelease.ps1
+      - name: Upload build
+        uses: actions/upload-artifact@v1
+        with:
+          name: Build
+          path: Build
